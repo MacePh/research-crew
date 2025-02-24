@@ -1,0 +1,24 @@
+# Ignore environment variables
+.env
+.venv
+
+# Ignore specific project files and directories
+building_an_ai_crew_for_prompt_research_and_implementation/.env
+building_an_ai_crew_for_prompt_research_and_implementation.zip
+db/
+tree.py
+
+# General Python ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environments
+venv/
+.venv/
+
+# Ignore logs and temp files
+*.log
+*.sqlite3
+*.db
