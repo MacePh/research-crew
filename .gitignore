@@ -3,8 +3,6 @@
 .venv
 
 # Ignore specific project files and directories
-building_an_ai_crew_for_prompt_research_and_implementation/.env
-building_an_ai_crew_for_prompt_research_and_implementation.zip
 db/
 tree.py
 
