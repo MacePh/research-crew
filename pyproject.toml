@@ -1,7 +1,7 @@
 [project]
-name = "research-crew-crew"
+name = "research_crew_crew"
 version = "0.1.0"
-description = "research-crew-crew using crewAI"
+description = "research_crew_crew using crewAI"
 authors = [{ name = "MacePh", email = "acircleperson@gmail.com" }]
 requires-python = ">=3.10,<=3.13"
 dependencies = [
@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [project.scripts]
-research-crew-crew = "research_crew_crew.main:run"
+research_crew_crew = "research_crew_crew.main:run"
 run_crew = "research_crew_crew.main:run"
 train = "research_crew_crew.main:train"
 replay = "research_crew_crew.main:replay"
@@ -20,4 +20,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/research-crew-crew"]
+packages = ["src/research_crew_crew"]

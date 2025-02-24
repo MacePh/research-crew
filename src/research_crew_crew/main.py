@@ -48,15 +48,3 @@ if __name__ == "__main__":
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)
-    command = sys.argv[1]
-    if command == "run":
-        run()
-    elif command == "train":
-        train()
-    elif command == "replay":
-        replay()
-    elif command == "test":
-        test()
-    else:
-        print(f"Unknown command: {command}")
-        sys.exit(1)

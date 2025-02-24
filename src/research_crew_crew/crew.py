@@ -55,7 +55,10 @@ class ResearchCrewCrew():
     def search_github_task(self) -> Task:
         return Task(
             config=self.tasks_config['search_github_task'],
-            tools=[GithubSearchTool()],
+            tools=[GithubSearchTool(
+                gh_token=os.getenv('GITHUB_TOKEN'),
+                content_types=["code", "repositories"]
+            )],
         )
 
     @task
