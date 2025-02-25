@@ -113,9 +113,9 @@ class ResearchCrewCrew():
                 
                 # Collect outputs from each task
                 for task in crew.tasks:
-                    if hasattr(task, 'output'):  # Check if task has output
-                        f.write(f"## {task.config['description']}\n\n")
-                        f.write(f"**Expected Output:** {task.config['expected_output']}\n\n")
+                    if hasattr(task, 'output') and task.config:  # Check if task has output and config
+                        f.write(f"## {task.config.get('description', 'Task Description')}\n\n")
+                        f.write(f"**Expected Output:** {task.config.get('expected_output', 'Expected Output')}\n\n")
                         f.write(f"**Output:**\n\n{task.output}\n\n")
                         
                         # Special formatting for the mermaid flow chart
