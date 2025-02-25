@@ -7,19 +7,24 @@ from research_crew_crew.crew import ResearchCrewCrew
 # Replace with inputs you want to test with, it will automatically
 # interpolate any tasks and agents information
 
+
 def run():
-    inputs = {'user_goal': 'Format api for agentic agents for netlify endpoints.'}
+    inputs = {"user_goal": "Format api for agentic agents for netlify endpoints."}
 
     crew = ResearchCrewCrew()
     crew.inputs = inputs  # Set the inputs
     crew.crew().kickoff()
 
+
 def train():
-    inputs = {'user_goal': 'sample_value'}
+    inputs = {"user_goal": "sample_value"}
     try:
-        ResearchCrewCrew().crew().train(n_iterations=int(sys.argv[1]), filename=sys.argv[2], inputs=inputs)
+        ResearchCrewCrew().crew().train(
+            n_iterations=int(sys.argv[1]), filename=sys.argv[2], inputs=inputs
+        )
     except Exception as e:
         raise Exception(f"An error occurred while training the crew: {e}")
+
 
 def replay():
     try:
@@ -27,12 +32,16 @@ def replay():
     except Exception as e:
         raise Exception(f"An error occurred while replaying the crew: {e}")
 
+
 def test():
-    inputs = {'user_goal': 'sample_value'}
+    inputs = {"user_goal": "sample_value"}
     try:
-        ResearchCrewCrew().crew().test(n_iterations=int(sys.argv[1]), openai_model_name=sys.argv[2], inputs=inputs)
+        ResearchCrewCrew().crew().test(
+            n_iterations=int(sys.argv[1]), openai_model_name=sys.argv[2], inputs=inputs
+        )
     except Exception as e:
         raise Exception(f"An error occurred while testing the crew: {e}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

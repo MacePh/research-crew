@@ -19,13 +19,10 @@ search_github_task:
   context:
   - research_topic_task
 design_flow_task:
-  description: Create an example flow for the AI agents based on the research findings.
-    Present the flow in an easily editable format using mermaid syntax.
-  expected_output: 'An editable flow diagram in mermaid format that illustrates the
-    roles and interactions of the AI agents designed to achieve the user''s goal:
-    {user_goal}.'
-  async_execution: false
+  description: Create an example flow for the AI agents based on the research findings. Present the flow in an easily editable format using Mermaid syntax. Use `flowchart TD` syntax, apply classes with `.` (e.g., `A.start`), and define `classDef` before applying classes.
+  expected_output: "An editable Mermaid flowchart using `flowchart TD` syntax, with clear nodes and arrows, and styled classes for start (e.g., `A.start`) and end (e.g., `M.end`) nodes using `classDef start fill:#f9f,stroke:#333,stroke-width:4px;` and `classDef end fill:#bbf,stroke:#333,stroke-width:4px;` that illustrates the roles and interactions of the AI agents designed to achieve the user's goal: {user_goal}."
   agent: flow_designer
+  async_execution: false
   context:
   - search_github_task
 create_game_plan_task:

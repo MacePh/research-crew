@@ -1,134 +1,213 @@
 import os
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from crewai_tools import WebsiteSearchTool
-from crewai_tools import GithubSearchTool
+from crewai_tools import WebsiteSearchTool, GithubSearchTool
+
 
 @CrewBase
-class ResearchCrewCrew():
+class ResearchCrewCrew:
     """ResearchCrewCrew crew"""
 
     def __init__(self):
-        self.inputs = None  # Initialize inputs as None
-        self.tasks_config = self.load_tasks_config()  # Load tasks configuration
-        self.agents_config = self.load_agents_config()  # Load agents configuration
+        self.inputs = None
+        self.tasks_config = self.load_tasks_config()
+        self.agents_config = self.load_agents_config()
 
     def load_tasks_config(self):
         """Load tasks configuration from YAML file"""
         import yaml
+
         with open("src/research_crew_crew/config/tasks.yaml", "r") as f:
             return yaml.safe_load(f)
 
     def load_agents_config(self):
         """Load agents configuration from YAML file"""
         import yaml
+
         with open("src/research_crew_crew/config/agents.yaml", "r") as f:
             return yaml.safe_load(f)
-        
+
     @agent
     def research_specialist(self) -> Agent:
         return Agent(
-            config=self.agents_config['research_specialist'],
+            config=self.agents_config["research_specialist"],
             tools=[WebsiteSearchTool()],
         )
 
     @agent
     def github_explorer(self) -> Agent:
         return Agent(
-            config=self.agents_config['github_explorer'],
-            tools=[GithubSearchTool(gh_token=os.getenv('GITHUB_TOKEN'), content_types=["code", "repositories"])]
+            config=self.agents_config["github_explorer"],
+            tools=[
+                GithubSearchTool(
+                    gh_token=os.getenv("GITHUB_TOKEN"),
+                    content_types=["code", "repositories"],
+                )
+            ],
         )
 
     @agent
     def flow_designer(self) -> Agent:
         return Agent(
-            config=self.agents_config['flow_designer'],
+            config=self.agents_config["flow_designer"],
             tools=[],
         )
 
     @agent
     def implementation_planner(self) -> Agent:
         return Agent(
-            config=self.agents_config['implementation_planner'],
+            config=self.agents_config["implementation_planner"],
             tools=[],
         )
 
     @agent
     def prompt_generator(self) -> Agent:
         return Agent(
-            config=self.agents_config['prompt_generator'],
+            config=self.agents_config["prompt_generator"],
             tools=[],
         )
 
-
     @task
     def research_topic_task(self) -> Task:
+        config = self.tasks_config["research_topic_task"]
         return Task(
-            config=self.tasks_config['research_topic_task'],
+            description=config["description"].format(**self.inputs)
+            if self.inputs
+            else config["description"],
+            expected_output=config["expected_output"].format(**self.inputs)
+            if self.inputs
+            else config["expected_output"],
             tools=[WebsiteSearchTool()],
+            agent=self.research_specialist(),
         )
 
     @task
     def search_github_task(self) -> Task:
+        config = self.tasks_config["search_github_task"]
         return Task(
-            config=self.tasks_config['search_github_task'],
-            tools=[GithubSearchTool(
-                gh_token=os.getenv('GITHUB_TOKEN'),
-                content_types=["code", "repositories"]
-            )],
+            description=config["description"].format(**self.inputs)
+            if self.inputs
+            else config["description"],
+            expected_output=config["expected_output"].format(**self.inputs)
+            if self.inputs
+            else config["expected_output"],
+            tools=[
+                GithubSearchTool(
+                    gh_token=os.getenv("GITHUB_TOKEN"),
+                    content_types=["code", "repositories"],
+                )
+            ],
+            agent=self.github_explorer(),
         )
 
     @task
     def design_flow_task(self) -> Task:
+        config = self.tasks_config["design_flow_task"]
         return Task(
-            config=self.tasks_config['design_flow_task'],
+            description=config["description"].format(**self.inputs)
+            if self.inputs
+            else config["description"],
+            expected_output=config["expected_output"].format(**self.inputs)
+            if self.inputs
+            else config["expected_output"],
             tools=[],
+            agent=self.flow_designer(),
         )
 
     @task
     def create_game_plan_task(self) -> Task:
+        config = self.tasks_config["create_game_plan_task"]
         return Task(
-            config=self.tasks_config['create_game_plan_task'],
+            description=config["description"].format(**self.inputs)
+            if self.inputs
+            else config["description"],
+            expected_output=config["expected_output"].format(**self.inputs)
+            if self.inputs
+            else config["expected_output"],
             tools=[],
+            agent=self.implementation_planner(),
         )
 
     @task
     def generate_prompt_task(self) -> Task:
+        config = self.tasks_config["generate_prompt_task"]
         return Task(
-            config=self.tasks_config['generate_prompt_task'],
+            description=config["description"].format(**self.inputs)
+            if self.inputs
+            else config["description"],
+            expected_output=config["expected_output"].format(**self.inputs)
+            if self.inputs
+            else config["expected_output"],
             tools=[],
+            agent=self.prompt_generator(),
         )
-
 
     @crew
     def crew(self) -> Crew:
         """Creates the ResearchCrewCrew crew"""
         crew = Crew(
-            agents=self.agents,  # Automatically created by the @agent decorator
-            tasks=self.tasks,  # Automatically created by the @task decorator
+            agents=self.agents,
+            tasks=self.tasks,
             process=Process.sequential,
             verbose=True,
         )
 
-        # Run the crew and get the result
-        result = crew.kickoff(inputs=self.inputs)  # Pass inputs to kickoff
+        # Debugging: Print inputs
+        print(f"Inputs: {self.inputs}")
 
-        # Save the result to a file, including the topic
-        if self.inputs and 'user_goal' in self.inputs:
-            with open("report.md", "w", encoding="utf-8") as f:
-                f.write(f"# Topic: {self.inputs['user_goal']}\n\n")
-                
-                # Collect outputs from each task
-                for task in crew.tasks:
-                    if hasattr(task, 'output') and task.config:  # Check if task has output and config
-                        f.write(f"## {task.config.get('description', 'Task Description')}\n\n")
-                        f.write(f"**Expected Output:** {task.config.get('expected_output', 'Expected Output')}\n\n")
-                        f.write(f"**Output:**\n\n{task.output}\n\n")
-                        
-                        # Special formatting for the mermaid flow chart
+        # Run the crew and get the result
+        result = crew.kickoff(inputs=self.inputs)
+        print(f"Crew result: {result}")
+
+        # Debugging: Inspect task outputs
+        task_configs = [
+            self.tasks_config["research_topic_task"],
+            self.tasks_config["search_github_task"],
+            self.tasks_config["design_flow_task"],
+            self.tasks_config["create_game_plan_task"],
+            self.tasks_config["generate_prompt_task"],
+        ]
+        for i, task in enumerate(crew.tasks):
+            output = getattr(task, "output", "No output")
+            desc = (
+                task_configs[i]["description"].format(**self.inputs)
+                if self.inputs
+                else task_configs[i]["description"]
+            )
+            print(f"Task: {desc}, Output: {output}")
+
+        # Write to report.md
+        if self.inputs and "user_goal" in self.inputs:
+            try:
+                with open("report.md", "w", encoding="utf-8") as f:
+                    f.write(f"# Topic: {self.inputs['user_goal']}\n\n")
+                    for i, task in enumerate(crew.tasks):
+                        desc = (
+                            task_configs[i]["description"].format(**self.inputs)
+                            if self.inputs
+                            else task_configs[i]["description"]
+                        )
+                        exp_output = (
+                            task_configs[i]["expected_output"].format(**self.inputs)
+                            if self.inputs
+                            else task_configs[i]["expected_output"]
+                        )
+                        actual_output = (
+                            task.output
+                            if hasattr(task, "output") and task.output
+                            else "No output generated"
+                        )
+                        f.write(f"## {desc}\n\n")
+                        f.write(f"**Expected Output:** {exp_output}\n\n")
+                        f.write(f"**Output:**\n\n{actual_output}\n\n")
                         if task.agent == self.flow_designer():
                             f.write("```mermaid\n")
-                            f.write(task.output)
+                            f.write(actual_output)
                             f.write("\n```\n\n")
+                print("Successfully wrote to report.md")
+            except Exception as e:
+                print(f"Error writing to report.md: {e}")
+        else:
+            print("No inputs or 'user_goal' not found, skipping report generation")
 
         return crew
