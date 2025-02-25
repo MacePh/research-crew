@@ -11,6 +11,7 @@ class ResearchCrewCrew():
     def __init__(self):
         self.inputs = None  # Initialize inputs as None
         self.tasks_config = self.load_tasks_config()  # Load tasks configuration
+        self.agents_config = self.load_agents_config()  # Load agents configuration
 
     def load_tasks_config(self):
         """Load tasks configuration from YAML file"""
@@ -18,6 +19,12 @@ class ResearchCrewCrew():
         with open("src/research_crew_crew/config/tasks.yaml", "r") as f:
             return yaml.safe_load(f)
 
+    def load_agents_config(self):
+        """Load agents configuration from YAML file"""
+        import yaml
+        with open("src/research_crew_crew/config/agents.yaml", "r") as f:
+            return yaml.safe_load(f)
+        
     @agent
     def research_specialist(self) -> Agent:
         return Agent(
