@@ -8,8 +8,11 @@ from research_crew_crew.crew import ResearchCrewCrew
 # interpolate any tasks and agents information
 
 def run():
-    inputs = {'user_goal': 'sample_value'}
-    ResearchCrewCrew().crew().kickoff(inputs=inputs)
+    inputs = {'user_goal': 'Format api for agentic agents for netlify endpoints.'}
+
+    crew = ResearchCrewCrew()
+    crew.inputs = inputs  # Set the inputs
+    crew.crew().kickoff()
 
 def train():
     inputs = {'user_goal': 'sample_value'}

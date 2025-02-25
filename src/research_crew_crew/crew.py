@@ -8,6 +8,16 @@ from crewai_tools import GithubSearchTool
 class ResearchCrewCrew():
     """ResearchCrewCrew crew"""
 
+    def __init__(self):
+        self.inputs = None  # Initialize inputs as None
+        self.tasks_config = self.load_tasks_config()  # Load tasks configuration
+
+    def load_tasks_config(self):
+        """Load tasks configuration from YAML file"""
+        import yaml
+        with open("src/research_crew_crew/config/tasks.yaml", "r") as f:
+            return yaml.safe_load(f)
+
     @agent
     def research_specialist(self) -> Agent:
         return Agent(
@@ -86,9 +96,32 @@ class ResearchCrewCrew():
     @crew
     def crew(self) -> Crew:
         """Creates the ResearchCrewCrew crew"""
-        return Crew(
-            agents=self.agents, # Automatically created by the @agent decorator
-            tasks=self.tasks, # Automatically created by the @task decorator
+        crew = Crew(
+            agents=self.agents,  # Automatically created by the @agent decorator
+            tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
         )
+
+        # Run the crew and get the result
+        result = crew.kickoff(inputs=self.inputs)  # Pass inputs to kickoff
+
+        # Save the result to a file, including the topic
+        if self.inputs and 'user_goal' in self.inputs:
+            with open("report.md", "w", encoding="utf-8") as f:
+                f.write(f"# Topic: {self.inputs['user_goal']}\n\n")
+                
+                # Collect outputs from each task
+                for task in crew.tasks:
+                    if hasattr(task, 'output'):  # Check if task has output
+                        f.write(f"## {task.config['description']}\n\n")
+                        f.write(f"**Expected Output:** {task.config['expected_output']}\n\n")
+                        f.write(f"**Output:**\n\n{task.output}\n\n")
+                        
+                        # Special formatting for the mermaid flow chart
+                        if task.agent == self.flow_designer():
+                            f.write("```mermaid\n")
+                            f.write(task.output)
+                            f.write("\n```\n\n")
+
+        return crew
