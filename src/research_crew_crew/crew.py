@@ -1,9 +1,18 @@
 import os
+from dotenv import load_dotenv
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from crewai_tools import WebsiteSearchTool, GithubSearchTool, GoogleSearchTool
+from crewai_tools import WebsiteSearchTool, GithubSearchTool, SerperDevTool
 
+# Load environment variables
+load_dotenv()
 
+# Verify API key is loaded
+serper_api_key = os.getenv("SERPER_API_KEY")
+if not serper_api_key:
+    raise ValueError("SERPER_API_KEY not found in environment variables")
+
+tool=SerperDevTool()
 @CrewBase
 class ResearchCrewCrew:
     """ResearchCrewCrew crew"""
@@ -69,7 +78,7 @@ class ResearchCrewCrew:
     def research_specialist(self) -> Agent:
         return Agent(
             config=self.agents_config["research_specialist"],
-            tools=[GoogleSearchTool()],
+            tools=[SerperDevTool(serper_api_key=serper_api_key)],
         )
 
     @agent
@@ -115,7 +124,7 @@ class ResearchCrewCrew:
             expected_output=config["expected_output"].format(**self.inputs)
             if self.inputs
             else config["expected_output"],
-            tools=[GoogleSearchTool()],
+            tools=[SerperDevTool(serper_api_key=serper_api_key)],
             agent=self.research_specialist(),
         )
 
@@ -252,7 +261,7 @@ class ResearchCrewCrew:
                         # Get agent name
                         agent_name = task.agent.__class__.__name__
                         
-                        # Get output and ensure it's a string
+                        # Ensure we have output
                         actual_output = "No output generated"
                         if hasattr(task, "output") and task.output:
                             # Convert TaskOutput to string if needed
