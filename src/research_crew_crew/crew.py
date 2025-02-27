@@ -1,37 +1,84 @@
 import os
+from dotenv import load_dotenv
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from crewai_tools import WebsiteSearchTool, GithubSearchTool
+from crewai_tools import WebsiteSearchTool, GithubSearchTool, SerperDevTool
 
+# Load environment variables
+load_dotenv()
 
+# Verify API key is loaded
+serper_api_key = os.getenv("SERPER_API_KEY")
+if not serper_api_key:
+    raise ValueError("SERPER_API_KEY not found in environment variables")
+
+tool=SerperDevTool()
 @CrewBase
 class ResearchCrewCrew:
     """ResearchCrewCrew crew"""
 
     def __init__(self):
-        self.inputs = None
+        self.inputs = {}
         self.tasks_config = self.load_tasks_config()
         self.agents_config = self.load_agents_config()
 
     def load_tasks_config(self):
         """Load tasks configuration from YAML file"""
         import yaml
-
-        with open("src/research_crew_crew/config/tasks.yaml", "r") as f:
+        
+        # Get the base directory
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        config_path = os.path.join(base_dir, "src", "research_crew_crew", "config", "tasks.yaml")
+        
+        # Fall back to relative path if absolute path doesn't exist
+        if not os.path.exists(config_path):
+            # Try alternate paths
+            alternate_paths = [
+                "/app/research_crew_crew/src/research_crew_crew/config/tasks.yaml",
+                "research_crew_crew/src/research_crew_crew/config/tasks.yaml",
+                "src/research_crew_crew/config/tasks.yaml",
+            ]
+            
+            for path in alternate_paths:
+                if os.path.exists(path):
+                    config_path = path
+                    break
+        
+        print(f"Loading tasks config from: {config_path}")
+        with open(config_path, "r") as f:
             return yaml.safe_load(f)
 
     def load_agents_config(self):
         """Load agents configuration from YAML file"""
         import yaml
-
-        with open("src/research_crew_crew/config/agents.yaml", "r") as f:
+        
+        # Get the base directory
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        config_path = os.path.join(base_dir, "src", "research_crew_crew", "config", "agents.yaml")
+        
+        # Fall back to relative path if absolute path doesn't exist
+        if not os.path.exists(config_path):
+            # Try alternate paths
+            alternate_paths = [
+                "/app/research_crew_crew/src/research_crew_crew/config/agents.yaml",
+                "research_crew_crew/src/research_crew_crew/config/agents.yaml",
+                "src/research_crew_crew/config/agents.yaml",
+            ]
+            
+            for path in alternate_paths:
+                if os.path.exists(path):
+                    config_path = path
+                    break
+        
+        print(f"Loading agents config from: {config_path}")
+        with open(config_path, "r") as f:
             return yaml.safe_load(f)
 
     @agent
     def research_specialist(self) -> Agent:
         return Agent(
             config=self.agents_config["research_specialist"],
-            tools=[WebsiteSearchTool()],
+            tools=[SerperDevTool(serper_api_key=serper_api_key)],
         )
 
     @agent
@@ -57,14 +104,14 @@ class ResearchCrewCrew:
     def implementation_planner(self) -> Agent:
         return Agent(
             config=self.agents_config["implementation_planner"],
-            tools=[],
+            tools=[WebsiteSearchTool()],
         )
 
     @agent
     def prompt_generator(self) -> Agent:
         return Agent(
             config=self.agents_config["prompt_generator"],
-            tools=[],
+            tools=[WebsiteSearchTool()],
         )
 
     @task
@@ -77,7 +124,7 @@ class ResearchCrewCrew:
             expected_output=config["expected_output"].format(**self.inputs)
             if self.inputs
             else config["expected_output"],
-            tools=[WebsiteSearchTool()],
+            tools=[SerperDevTool(serper_api_key=serper_api_key)],
             agent=self.research_specialist(),
         )
 
@@ -103,10 +150,14 @@ class ResearchCrewCrew:
     @task
     def design_flow_task(self) -> Task:
         config = self.tasks_config["design_flow_task"]
+        
+        # Simple description without all the extra instructions
+        description = config["description"]
+        if self.inputs:
+            description = description.format(**self.inputs)
+        
         return Task(
-            description=config["description"].format(**self.inputs)
-            if self.inputs
-            else config["description"],
+            description=description,
             expected_output=config["expected_output"].format(**self.inputs)
             if self.inputs
             else config["expected_output"],
@@ -145,69 +196,91 @@ class ResearchCrewCrew:
     @crew
     def crew(self) -> Crew:
         """Creates the ResearchCrewCrew crew"""
+        # Get inputs
+        user_goal = self.inputs.get("user_goal", "")
+        crew_name = self.inputs.get("crew_name", "research_crew")
+        
+        # Define report directory and ensure it exists
+        reports_dir = "reports"
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        # Create tasks
+        research_task = self.research_topic_task()
+        github_task = self.search_github_task()
+        flow_task = self.design_flow_task()
+        create_game_plan_task = self.create_game_plan_task()
+        prompt_task = self.generate_prompt_task()
+        
+        # Initialize crew
         crew = Crew(
-            agents=self.agents,
-            tasks=self.tasks,
+            agents=[
+                self.research_specialist(),
+                self.github_explorer(),
+                self.flow_designer(),
+                self.implementation_planner(),
+                self.prompt_generator()
+            ],
+            tasks=[
+                research_task,
+                github_task,
+                flow_task,
+                create_game_plan_task,
+                prompt_task
+            ],
             process=Process.sequential,
             verbose=True,
         )
-
-        # Debugging: Print inputs
-        print(f"Inputs: {self.inputs}")
-
-        # Run the crew and get the result
+        
+        # Run the crew
         result = crew.kickoff(inputs=self.inputs)
-        print(f"Crew result: {result}")
-
-        # Debugging: Inspect task outputs
-        task_configs = [
-            self.tasks_config["research_topic_task"],
-            self.tasks_config["search_github_task"],
-            self.tasks_config["design_flow_task"],
-            self.tasks_config["create_game_plan_task"],
-            self.tasks_config["generate_prompt_task"],
-        ]
-        for i, task in enumerate(crew.tasks):
-            output = getattr(task, "output", "No output")
-            desc = (
-                task_configs[i]["description"].format(**self.inputs)
-                if self.inputs
-                else task_configs[i]["description"]
-            )
-            print(f"Task: {desc}, Output: {output}")
-
+        
         # Write to report.md
         if self.inputs and "user_goal" in self.inputs:
             try:
-                with open("report.md", "w", encoding="utf-8") as f:
+                report_path = os.path.join(reports_dir, f"{crew_name}_report.md")
+                
+                with open(report_path, "w", encoding="utf-8") as f:
                     f.write(f"# Topic: {self.inputs['user_goal']}\n\n")
+                    f.write(f"## Crew Name: {crew_name}\n\n")
+                    
+                    task_configs = [
+                        self.tasks_config["research_topic_task"],
+                        self.tasks_config["search_github_task"],
+                        self.tasks_config["design_flow_task"],
+                        self.tasks_config["create_game_plan_task"],
+                        self.tasks_config["generate_prompt_task"],
+                    ]
+                    
                     for i, task in enumerate(crew.tasks):
                         desc = (
                             task_configs[i]["description"].format(**self.inputs)
                             if self.inputs
                             else task_configs[i]["description"]
                         )
-                        exp_output = (
-                            task_configs[i]["expected_output"].format(**self.inputs)
-                            if self.inputs
-                            else task_configs[i]["expected_output"]
-                        )
-                        actual_output = (
-                            task.output
-                            if hasattr(task, "output") and task.output
-                            else "No output generated"
-                        )
-                        f.write(f"## {desc}\n\n")
-                        f.write(f"**Expected Output:** {exp_output}\n\n")
+                        
+                        # Get agent name
+                        agent_name = task.agent.__class__.__name__
+                        
+                        # Ensure we have output
+                        actual_output = "No output generated"
+                        if hasattr(task, "output") and task.output:
+                            # Convert TaskOutput to string if needed
+                            if hasattr(task.output, "__str__"):
+                                actual_output = str(task.output)
+                            else:
+                                # If it's already a string or has no __str__ method
+                                try:
+                                    actual_output = str(task.output)
+                                except:
+                                    actual_output = "Error: Could not convert output to string"
+                        
+                        # Write to file
+                        f.write(f"## {desc} (Agent: {agent_name})\n\n")
                         f.write(f"**Output:**\n\n{actual_output}\n\n")
-                        if task.agent == self.flow_designer():
-                            f.write("```mermaid\n")
-                            f.write(actual_output)
-                            f.write("\n```\n\n")
-                print("Successfully wrote to report.md")
+                
+                print(f"Successfully wrote to {report_path}")
+                
             except Exception as e:
-                print(f"Error writing to report.md: {e}")
-        else:
-            print("No inputs or 'user_goal' not found, skipping report generation")
-
+                print(f"Error writing to report file: {e}")
+        
         return crew

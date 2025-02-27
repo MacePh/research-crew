@@ -10,7 +10,8 @@ research_topic_task:
   agent: research_specialist
 search_github_task:
   description: 'Search GitHub for open-source projects that align with the user''s
-    goal: {user_goal}. Use specific queries to find relevant repositories and examples.'
+    goal: {user_goal}. Use specific queries to find relevant repositories and examples.
+    If the previous research task did not complete, independently search for relevant repositories.'
   expected_output: 'A compiled list of relevant GitHub repositories and open-source
     projects that relate to the user''s goal: {user_goal}. Include links and brief
     descriptions of each project.'
@@ -19,15 +20,21 @@ search_github_task:
   context:
   - research_topic_task
 design_flow_task:
-  description: Create an example flow for the AI agents based on the research findings. Present the flow in an easily editable format using Mermaid syntax. Use `flowchart TD` syntax, apply classes with `.` (e.g., `A.start`), and define `classDef` before applying classes.
-  expected_output: "An editable Mermaid flowchart using `flowchart TD` syntax, with clear nodes and arrows, and styled classes for start (e.g., `A.start`) and end (e.g., `M.end`) nodes using `classDef start fill:#f9f,stroke:#333,stroke-width:4px;` and `classDef end fill:#bbf,stroke:#333,stroke-width:4px;` that illustrates the roles and interactions of the AI agents designed to achieve the user's goal: {user_goal}."
+  description: 'Create an example flow for the AI agents based on the research findings.
+    Present the flow in an easily editable format using mermaid syntax. Your diagram MUST
+    use "flowchart TD" syntax and have classDef definitions at the top followed by nodes
+    and connections, with class applications at the end.'
+  expected_output: 'An editable flow diagram in mermaid format that illustrates the
+    roles and interactions of the AI agents designed to achieve the user''s goal:
+    {user_goal}.'
   agent: flow_designer
   async_execution: false
   context:
   - search_github_task
 create_game_plan_task:
-  description: Develop a step-by-step game plan for the user to implement their crew
-    based on the designed flow. Reference relevant documentation and best practices.
+  description: 'Develop a step-by-step game plan for the user to implement their crew
+    based on the designed flow. If the previous flow design task did not complete, create
+    your own implementation plan based on the user''s goal directly.'
   expected_output: A detailed step-by-step game plan for implementing the crew, including
     necessary actions and considerations for the user.
   async_execution: false
@@ -35,8 +42,9 @@ create_game_plan_task:
   context:
   - design_flow_task
 generate_prompt_task:
-  description: Provide a recommended prompt that the user can use to ask Grok 3 for
-    assistance in completing the implementation phase.
+  description: 'Provide a recommended prompt that the user can use to ask Grok 3 for
+    assistance in completing the implementation phase. Even if the previous tasks did not
+    complete successfully, create a prompt based directly on the user''s goal.'
   expected_output: A clear and effective prompt for the user to communicate their
     needs to Grok 3 during the implementation phase.
   async_execution: false
