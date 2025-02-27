@@ -1,7 +1,7 @@
 import os
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from crewai_tools import WebsiteSearchTool, GithubSearchTool
+from crewai_tools import WebsiteSearchTool, GithubSearchTool, GoogleSearchTool
 
 
 @CrewBase
@@ -69,7 +69,7 @@ class ResearchCrewCrew:
     def research_specialist(self) -> Agent:
         return Agent(
             config=self.agents_config["research_specialist"],
-            tools=[WebsiteSearchTool()],
+            tools=[GoogleSearchTool()],
         )
 
     @agent
@@ -115,7 +115,7 @@ class ResearchCrewCrew:
             expected_output=config["expected_output"].format(**self.inputs)
             if self.inputs
             else config["expected_output"],
-            tools=[WebsiteSearchTool()],
+            tools=[GoogleSearchTool()],
             agent=self.research_specialist(),
         )
 
